@@ -6,8 +6,11 @@ const ShareModal = ({ isOpen, onClose, productName, productId }) => {
   
   if (!isOpen) return null;
 
-  // Generate product URL
-  const productUrl = `${window.location.origin}/product/${productId}`;
+  // Get backend URL from environment
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+  
+  // Generate product URL - use API share endpoint for better social media previews
+  const productUrl = `${backendUrl}/api/share/product/${productId}`;
 
   // Copy to clipboard
   const handleCopyLink = async () => {
