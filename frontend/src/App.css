@@ -78,3 +78,21 @@ html {
 .animate-pulse-slow {
     animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Fix for transition-colors overflow issue */
+.transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ensure text wraps properly in share modal and other containers */
+.share-modal-text,
+.text-truncate-wrap {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+}
