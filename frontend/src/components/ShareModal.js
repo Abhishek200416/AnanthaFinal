@@ -108,11 +108,11 @@ const ShareModal = ({ isOpen, onClose, productName, productId }) => {
                   <Copy className="w-5 h-5 text-gray-600" />
                 )}
               </div>
-              <div className="flex-1 text-left">
+              <div className="flex-1 text-left overflow-hidden">
                 <p className="font-semibold text-gray-800">
                   {copied ? 'Link Copied!' : 'Copy Link'}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{productUrl}</p>
+                <p className="text-xs text-gray-500 break-all line-clamp-2">{productUrl}</p>
               </div>
             </button>
 
