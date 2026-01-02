@@ -1,8 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 const Footer = () => {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState(''); // 'loading', 'success', 'error'
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const response = await fetch(`${backendUrl}/api/newsletter/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: newsletterEmail,
+          source: 'footer'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setNewsletterStatus('success');
+        setNewsletterMessage(data.message || 'Successfully subscribed!');
+        setNewsletterEmail('');
+        setTimeout(() => {
+          setNewsletterStatus('');
+          setNewsletterMessage('');
+        }, 5000);
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterMessage(data.detail || 'Subscription failed');
+        setTimeout(() => {
+          setNewsletterStatus('');
+          setNewsletterMessage('');
+        }, 5000);
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      setNewsletterStatus('error');
+      setNewsletterMessage('Failed to subscribe. Please try again.');
+      setTimeout(() => {
+        setNewsletterStatus('');
+        setNewsletterMessage('');
+      }, 5000);
+    }
+  };
+
   return (
     <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
