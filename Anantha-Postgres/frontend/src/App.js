@@ -12,6 +12,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import ScrollToTop from './components/ScrollToTop';
+import CookieConsent from './components/CookieConsent';
 
 // Pages
 import Home from './pages/Home';
@@ -49,6 +50,7 @@ function App() {
                 </Routes>
                 <Footer />
                 <ScrollToTop />
+                <CookieConsent />
                 <Toaster />
               </div>
             </CartProvider>
