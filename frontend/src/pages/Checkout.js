@@ -61,6 +61,9 @@ function Checkout() {
   // Payment settings and WhatsApp
   const [paymentSettings, setPaymentSettings] = useState({ status: 'enabled' });
   const [whatsappNumbers, setWhatsappNumbers] = useState([]);
+  
+  // Newsletter subscription
+  const [subscribeToNewsletter, setSubscribeToNewsletter] = useState(false);
 
   // Enrich cart items with full product data
   const enrichedCart = React.useMemo(() => {
