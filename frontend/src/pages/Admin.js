@@ -6,6 +6,7 @@ import { toast } from '../hooks/use-toast';
 import { categories } from '../mock';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import AdminOrders from '../components/AdminOrders';
+import AdminNewsletter from '../components/AdminNewsletter';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
