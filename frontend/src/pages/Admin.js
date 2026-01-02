@@ -1271,7 +1271,7 @@ const Admin = () => {
     
     if (tabParam) {
       // Validate tab parameter against allowed tabs
-      const allowedTabs = ['products', 'orders', 'analytics', 'bestsellers', 'festival', 'discounts', 'settings', 'reports', 'profile', 'delivery', 'payment-settings', 'whatsapp'];
+      const allowedTabs = ['products', 'orders', 'analytics', 'bestsellers', 'festival', 'discounts', 'settings', 'reports', 'profile', 'delivery', 'payment-settings', 'whatsapp', 'newsletter'];
       if (allowedTabs.includes(tabParam)) {
         setActiveTab(tabParam);
         
