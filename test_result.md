@@ -207,7 +207,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Newsletter API Endpoints"
     - "Cookie Consent Popup Component"
     - "Checkout Newsletter Checkbox"
     - "Admin Newsletter Management Panel"
