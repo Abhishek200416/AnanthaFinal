@@ -1932,6 +1932,17 @@ const Admin = () => {
             >
               WhatsApp
             </button>
+            <button
+              onClick={() => setActiveTab('newsletter')}
+              className={`flex-1 py-4 px-2 font-semibold transition-colors flex items-center justify-center space-x-1 whitespace-nowrap ${
+                activeTab === 'newsletter'
+                  ? 'border-b-2 border-orange-500 text-orange-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Newsletter</span>
+            </button>
           </div>
 
           {/* Products Tab */}
