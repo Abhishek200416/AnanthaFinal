@@ -1160,6 +1160,20 @@ _Click product links above to view products_`;
                       required
                     />
                   </div>
+                  
+                  {/* Newsletter Subscription Checkbox */}
+                  <div className="mt-2 sm:mt-3 flex items-start space-x-2 bg-orange-50 p-2 sm:p-3 rounded-lg border border-orange-200">
+                    <input
+                      type="checkbox"
+                      id="subscribeNewsletter"
+                      checked={subscribeToNewsletter}
+                      onChange={(e) => setSubscribeToNewsletter(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <label htmlFor="subscribeNewsletter" className="text-xs sm:text-sm text-gray-700 cursor-pointer flex items-center gap-1">
+                      <span>📧 Subscribe to our newsletter for exclusive offers, new products & recipes</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div>
