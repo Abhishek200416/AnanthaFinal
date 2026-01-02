@@ -905,6 +905,19 @@ _Click product links above to view products_`;
                 sendWhatsAppMessages(orderData, order_id, tracking_code);
               }
 
+              // Subscribe to newsletter if checkbox is checked
+              if (subscribeToNewsletter && customerEmail) {
+                try {
+                  await axios.post(`${API}/newsletter/subscribe`, {
+                    email: customerEmail,
+                    source: 'checkout'
+                  });
+                  console.log('✅ Subscribed to newsletter');
+                } catch (error) {
+                  console.error('Newsletter subscription failed:', error);
+                }
+              }
+
               // Clear cart and navigate to tracking
               clearCart();
               toast({
