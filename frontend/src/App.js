@@ -50,6 +50,7 @@ function App() {
                 </Routes>
                 <Footer />
                 <ScrollToTop />
+                <CookieConsent />
                 <Toaster />
               </div>
             </CartProvider>
