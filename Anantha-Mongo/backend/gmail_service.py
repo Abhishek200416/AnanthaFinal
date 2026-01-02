@@ -840,3 +840,146 @@ async def send_payment_status_update_email(to_email: str, order_data: dict, old_
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False
 
+
+
+async def send_newsletter_email(
+    to_email: str, 
+    subject: str, 
+    content: str,
+    product_name: str = None,
+    product_image: str = None,
+    product_description: str = None,
+    product_link: str = None
+):
+    """Send newsletter email to subscriber"""
+    try:
+        GMAIL_EMAIL, GMAIL_APP_PASSWORD = get_gmail_credentials()
+        
+        if not GMAIL_EMAIL or not GMAIL_APP_PASSWORD:
+            logger.warning("Gmail credentials not configured. Newsletter not sent.")
+            return False
+            
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f'Anantha Home Foods Newsletter <{GMAIL_EMAIL}>'
+        msg['To'] = to_email
+        
+        # Build product section if product details provided
+        product_section = ""
+        if product_name and product_image:
+            product_section = f'''
+            <div style="background-color: #fff7ed; padding: 20px; border-radius: 12px; margin: 25px 0;">
+                <h3 style="color: #f97316; margin-top: 0; font-size: 22px;">✨ Featured Product</h3>
+                <div style="text-align: center;">
+                    <img src="{product_image}" alt="{product_name}" style="max-width: 100%; height: auto; border-radius: 12px; margin: 15px 0;" />
+                </div>
+                <h4 style="color: #ea580c; font-size: 20px; margin: 15px 0;">{product_name}</h4>
+                {f'<p style="color: #666; line-height: 1.6;">{product_description}</p>' if product_description else ''}
+                {f'<a href="{product_link}" style="display: inline-block; background-color: #f97316; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: background-color 0.3s;">View Product</a>' if product_link else ''}
+            </div>
+            '''
+        
+        # Get backend URL for unsubscribe link
+        backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+        
+        html_content = f'''
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 0;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 12px 12px 0 0;
+                }}
+                .content {{
+                    background-color: white;
+                    padding: 30px;
+                    border-left: 1px solid #e5e7eb;
+                    border-right: 1px solid #e5e7eb;
+                }}
+                .footer {{
+                    background-color: #f9fafb;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 0 0 12px 12px;
+                    border: 1px solid #e5e7eb;
+                    border-top: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1 style="margin: 0; font-size: 28px;">🍲 Anantha Home Foods</h1>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Traditional Homemade Delicacies</p>
+                </div>
+                
+                <div class="content">
+                    <div style="margin-bottom: 30px;">
+                        {content}
+                    </div>
+                    
+                    {product_section}
+                    
+                    <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                        <h4 style="color: #16a34a; margin-top: 0;">📞 Get in Touch</h4>
+                        <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:9985116385" style="color: #16a34a; text-decoration: none;">9985116385</a></p>
+                        <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:contact.ananthahomefoods@gmail.com" style="color: #16a34a; text-decoration: none;">contact.ananthahomefoods@gmail.com</a></p>
+                        <p style="margin: 5px 0;"><strong>Location:</strong> Guntur, Andhra Pradesh</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="{backend_url}" style="display: inline-block; background-color: #f97316; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">Visit Our Website</a>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p style="color: #666; font-size: 13px; margin: 0 0 10px 0;">
+                        You're receiving this email because you subscribed to our newsletter.
+                    </p>
+                    <p style="font-size: 12px; color: #999; margin: 0;">
+                        <a href="mailto:{GMAIL_EMAIL}?subject=Unsubscribe%20from%20Newsletter&body=Please%20unsubscribe%20{to_email}%20from%20the%20newsletter" style="color: #999; text-decoration: underline;">Unsubscribe</a> | 
+                        © {datetime.now().year} Anantha Home Foods
+                    </p>
+                    <p style="font-size: 11px; color: #999; margin-top: 10px;">
+                        Handcrafted with love and tradition 💚
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # Attach HTML content
+        html_part = MIMEText(html_content, 'html')
+        msg.attach(html_part)
+        
+        # Send email using Gmail SMTP
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(GMAIL_EMAIL, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+        
+        logger.info(f"Newsletter sent successfully to {to_email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send newsletter to {to_email}: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return False
+

@@ -308,6 +308,43 @@ class OTPVerification(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: datetime
 
+# ============= NEWSLETTER MODELS =============
+
+class NewsletterSubscriber(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: EmailStr
+    source: str  # "cookie", "checkout", "footer"
+    subscribed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+    unsubscribed_at: Optional[datetime] = None
+
+class NewsletterSubscribe(BaseModel):
+    email: EmailStr
+    source: str = "cookie"  # cookie, checkout, footer
+
+class NewsletterUnsubscribe(BaseModel):
+    email: EmailStr
+
+class NewsletterCampaign(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    subject: str
+    content: str
+    product_id: Optional[str] = None
+    product_name: Optional[str] = None
+    product_image: Optional[str] = None
+    product_description: Optional[str] = None
+    product_link: Optional[str] = None
+    sent_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    recipients_count: int = 0
+    status: str = "draft"  # draft, sent, failed
+
+class NewsletterCreate(BaseModel):
+    subject: str
+    content: str
+    product_id: Optional[str] = None
+
 # ============= HELPER FUNCTIONS =============
 # Note: generate_order_id, generate_tracking_code moved to utils/helpers.py
 
@@ -3411,6 +3448,223 @@ async def share_product_with_meta(product_id: str, request: Request):
             content=f"<html><head><title>Error</title></head><body><h1>Error loading product</h1><p>{str(e)}</p></body></html>",
             status_code=500
         )
+
+# ============= NEWSLETTER APIS =============
+
+@api_router.post("/newsletter/subscribe")
+async def subscribe_to_newsletter(subscribe_data: NewsletterSubscribe):
+    """Subscribe to newsletter"""
+    try:
+        # Check if email already subscribed
+        existing = await db.newsletter_subscribers.find_one({"email": subscribe_data.email})
+        
+        if existing:
+            # If previously unsubscribed, reactivate
+            if not existing.get("is_active"):
+                await db.newsletter_subscribers.update_one(
+                    {"email": subscribe_data.email},
+                    {"$set": {
+                        "is_active": True,
+                        "subscribed_at": datetime.now(timezone.utc),
+                        "source": subscribe_data.source
+                    }}
+                )
+                return {"message": "Successfully resubscribed to newsletter!"}
+            else:
+                return {"message": "Email already subscribed to newsletter"}
+        
+        # Create new subscriber
+        subscriber = NewsletterSubscriber(
+            email=subscribe_data.email,
+            source=subscribe_data.source
+        )
+        
+        await db.newsletter_subscribers.insert_one(subscriber.model_dump())
+        
+        logger.info(f"New newsletter subscriber: {subscribe_data.email} via {subscribe_data.source}")
+        return {"message": "Successfully subscribed to newsletter!"}
+        
+    except Exception as e:
+        logger.error(f"Error subscribing to newsletter: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to subscribe to newsletter")
+
+@api_router.post("/newsletter/unsubscribe")
+async def unsubscribe_from_newsletter(unsubscribe_data: NewsletterUnsubscribe):
+    """Unsubscribe from newsletter"""
+    try:
+        result = await db.newsletter_subscribers.update_one(
+            {"email": unsubscribe_data.email},
+            {"$set": {
+                "is_active": False,
+                "unsubscribed_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Email not found in newsletter subscribers")
+        
+        return {"message": "Successfully unsubscribed from newsletter"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error unsubscribing from newsletter: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to unsubscribe from newsletter")
+
+@api_router.get("/admin/newsletter/subscribers")
+async def get_newsletter_subscribers(current_user: dict = Depends(get_current_user)):
+    """Get all newsletter subscribers (Admin only)"""
+    try:
+        if not current_user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        subscribers = await db.newsletter_subscribers.find(
+            {},
+            {"_id": 0}
+        ).sort("subscribed_at", -1).to_list(None)
+        
+        # Convert datetime to ISO string
+        for sub in subscribers:
+            if isinstance(sub.get("subscribed_at"), datetime):
+                sub["subscribed_at"] = sub["subscribed_at"].isoformat()
+            if isinstance(sub.get("unsubscribed_at"), datetime):
+                sub["unsubscribed_at"] = sub["unsubscribed_at"].isoformat()
+        
+        active_count = sum(1 for sub in subscribers if sub.get("is_active"))
+        
+        return {
+            "subscribers": subscribers,
+            "total": len(subscribers),
+            "active": active_count,
+            "inactive": len(subscribers) - active_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching newsletter subscribers: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch newsletter subscribers")
+
+@api_router.get("/admin/newsletter/campaigns")
+async def get_newsletter_campaigns(current_user: dict = Depends(get_current_user)):
+    """Get all newsletter campaigns (Admin only)"""
+    try:
+        if not current_user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        campaigns = await db.newsletter_campaigns.find(
+            {},
+            {"_id": 0}
+        ).sort("sent_at", -1).to_list(None)
+        
+        # Convert datetime to ISO string
+        for campaign in campaigns:
+            if isinstance(campaign.get("sent_at"), datetime):
+                campaign["sent_at"] = campaign["sent_at"].isoformat()
+        
+        return {"campaigns": campaigns, "total": len(campaigns)}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching newsletter campaigns: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch newsletter campaigns")
+
+@api_router.post("/admin/newsletter/send")
+async def send_newsletter(
+    campaign_data: NewsletterCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create and send newsletter to all active subscribers (Admin only)"""
+    try:
+        if not current_user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Get all active subscribers
+        subscribers = await db.newsletter_subscribers.find(
+            {"is_active": True},
+            {"_id": 0, "email": 1}
+        ).to_list(None)
+        
+        if not subscribers:
+            raise HTTPException(status_code=400, detail="No active subscribers found")
+        
+        # Get product details if product_id provided
+        product_name = None
+        product_image = None
+        product_description = None
+        product_link = None
+        
+        if campaign_data.product_id:
+            product = await db.products.find_one({"id": campaign_data.product_id}, {"_id": 0})
+            if product:
+                product_name = product.get("name")
+                product_image = product.get("image")
+                product_description = product.get("description")
+                # Get backend URL from env
+                backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+                product_link = f"{backend_url}/product/{campaign_data.product_id}"
+        
+        # Create campaign record
+        campaign = NewsletterCampaign(
+            subject=campaign_data.subject,
+            content=campaign_data.content,
+            product_id=campaign_data.product_id,
+            product_name=product_name,
+            product_image=product_image,
+            product_description=product_description,
+            product_link=product_link,
+            recipients_count=len(subscribers),
+            status="sending"
+        )
+        
+        await db.newsletter_campaigns.insert_one(campaign.model_dump())
+        
+        # Import newsletter email function
+        from gmail_service import send_newsletter_email
+        
+        # Send emails to all subscribers
+        successful_sends = 0
+        failed_sends = 0
+        
+        for subscriber in subscribers:
+            try:
+                await send_newsletter_email(
+                    to_email=subscriber["email"],
+                    subject=campaign_data.subject,
+                    content=campaign_data.content,
+                    product_name=product_name,
+                    product_image=product_image,
+                    product_description=product_description,
+                    product_link=product_link
+                )
+                successful_sends += 1
+            except Exception as e:
+                logger.error(f"Failed to send newsletter to {subscriber['email']}: {str(e)}")
+                failed_sends += 1
+        
+        # Update campaign status
+        campaign_status = "sent" if failed_sends == 0 else "partial"
+        await db.newsletter_campaigns.update_one(
+            {"id": campaign.id},
+            {"$set": {"status": campaign_status}}
+        )
+        
+        logger.info(f"Newsletter sent: {successful_sends} successful, {failed_sends} failed")
+        
+        return {
+            "message": "Newsletter sent successfully",
+            "campaign_id": campaign.id,
+            "recipients": len(subscribers),
+            "successful": successful_sends,
+            "failed": failed_sends
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending newsletter: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send newsletter: {str(e)}")
 
 # Include router
 app.include_router(api_router)
