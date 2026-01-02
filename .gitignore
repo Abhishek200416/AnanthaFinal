@@ -96,3 +96,23 @@ Thumbs.db
 # Specific cleanup items
 backend/yarn.lock
 frontend/yarn.lock
+
+# Supervisor logs
+/var/log/supervisor/
+
+# Documentation and temporary files
+*.md.backup
+*_COMPLETE.md
+*_PLAN.md
+TEXT_OVERFLOW_FIX.md
+CLEANUP_COMPLETE.md
+REORGANIZATION_PLAN.md
+SETUP_COMPLETE.md
+
+# Test results (optional - uncomment if you don't want to track)
+# test_result.md
+
+# System files
+.emergent/
+supervisord.pid
+supervisord.log
