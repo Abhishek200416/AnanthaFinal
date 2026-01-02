@@ -61,6 +61,9 @@ function Checkout() {
   // Payment settings and WhatsApp
   const [paymentSettings, setPaymentSettings] = useState({ status: 'enabled' });
   const [whatsappNumbers, setWhatsappNumbers] = useState([]);
+  
+  // Newsletter subscription
+  const [subscribeToNewsletter, setSubscribeToNewsletter] = useState(false);
 
   // Enrich cart items with full product data
   const enrichedCart = React.useMemo(() => {
@@ -902,6 +905,19 @@ _Click product links above to view products_`;
                 sendWhatsAppMessages(orderData, order_id, tracking_code);
               }
 
+              // Subscribe to newsletter if checkbox is checked
+              if (subscribeToNewsletter && customerEmail) {
+                try {
+                  await axios.post(`${API}/newsletter/subscribe`, {
+                    email: customerEmail,
+                    source: 'checkout'
+                  });
+                  console.log('✅ Subscribed to newsletter');
+                } catch (error) {
+                  console.error('Newsletter subscription failed:', error);
+                }
+              }
+
               // Clear cart and navigate to tracking
               clearCart();
               toast({
@@ -958,6 +974,19 @@ _Click product links above to view products_`;
             description: "Order created but no WhatsApp notifications will be sent. Please add WhatsApp numbers in admin panel.",
             variant: "destructive"
           });
+        }
+
+        // Subscribe to newsletter if checkbox is checked
+        if (subscribeToNewsletter && customerEmail) {
+          try {
+            await axios.post(`${API}/newsletter/subscribe`, {
+              email: customerEmail,
+              source: 'checkout'
+            });
+            console.log('✅ Subscribed to newsletter');
+          } catch (error) {
+            console.error('Newsletter subscription failed:', error);
+          }
         }
 
         // Clear cart and navigate to tracking
@@ -1130,6 +1159,20 @@ _Click product links above to view products_`;
                       className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
                       required
                     />
+                  </div>
+                  
+                  {/* Newsletter Subscription Checkbox */}
+                  <div className="mt-2 sm:mt-3 flex items-start space-x-2 bg-orange-50 p-2 sm:p-3 rounded-lg border border-orange-200">
+                    <input
+                      type="checkbox"
+                      id="subscribeNewsletter"
+                      checked={subscribeToNewsletter}
+                      onChange={(e) => setSubscribeToNewsletter(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <label htmlFor="subscribeNewsletter" className="text-xs sm:text-sm text-gray-700 cursor-pointer flex items-center gap-1">
+                      <span>📧 Subscribe to our newsletter for exclusive offers, new products & recipes</span>
+                    </label>
                   </div>
                 </div>
 
