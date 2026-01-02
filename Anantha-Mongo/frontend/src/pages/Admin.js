@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '../contexts/AdminContext';
 import { useLocation } from 'react-router-dom';
-import { LogIn, LogOut, Package, MapPin, Star, PlusCircle, Edit, Trash2, Save, X, Sparkles, Upload, TrendingUp, Percent, Zap, Code, Palette, Wrench, Archive, Truck, Search, CreditCard } from 'lucide-react';
+import { LogIn, LogOut, Package, MapPin, Star, PlusCircle, Edit, Trash2, Save, X, Sparkles, Upload, TrendingUp, Percent, Zap, Code, Palette, Wrench, Archive, Truck, Search, CreditCard, Mail } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 import { categories } from '../mock';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import AdminOrders from '../components/AdminOrders';
+import AdminNewsletter from '../components/AdminNewsletter';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -1271,7 +1272,7 @@ const Admin = () => {
     
     if (tabParam) {
       // Validate tab parameter against allowed tabs
-      const allowedTabs = ['products', 'orders', 'analytics', 'bestsellers', 'festival', 'discounts', 'settings', 'reports', 'profile', 'delivery', 'payment-settings', 'whatsapp'];
+      const allowedTabs = ['products', 'orders', 'analytics', 'bestsellers', 'festival', 'discounts', 'settings', 'reports', 'profile', 'delivery', 'payment-settings', 'whatsapp', 'newsletter'];
       if (allowedTabs.includes(tabParam)) {
         setActiveTab(tabParam);
         
@@ -1931,6 +1932,17 @@ const Admin = () => {
               }`}
             >
               WhatsApp
+            </button>
+            <button
+              onClick={() => setActiveTab('newsletter')}
+              className={`flex-1 py-4 px-2 font-semibold transition-colors flex items-center justify-center space-x-1 whitespace-nowrap ${
+                activeTab === 'newsletter'
+                  ? 'border-b-2 border-orange-500 text-orange-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Newsletter</span>
             </button>
           </div>
 
@@ -3449,6 +3461,9 @@ const Admin = () => {
               )}
             </div>
           )}
+
+          {/* Newsletter Tab */}
+          {activeTab === 'newsletter' && <AdminNewsletter />}
 
           {/* States Tab - REMOVED: Combined with Cities */}
           {false && activeTab === 'states' && (
