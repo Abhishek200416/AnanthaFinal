@@ -3462,6 +3462,9 @@ const Admin = () => {
             </div>
           )}
 
+          {/* Newsletter Tab */}
+          {activeTab === 'newsletter' && <AdminNewsletter />}
+
           {/* States Tab - REMOVED: Combined with Cities */}
           {false && activeTab === 'states' && (
             <div className="p-6">
