@@ -100,9 +100,39 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Social - Fourth Column */}
+          {/* Newsletter & Social - Fourth Column */}
           <div className="order-4">
-            <h3 className="text-lg font-bold mb-4 text-orange-400">Follow Us</h3>
+            <h3 className="text-lg font-bold mb-4 text-orange-400">Newsletter</h3>
+            <p className="text-gray-300 text-sm mb-3">
+              Get updates on new products & offers!
+            </p>
+            <form onSubmit={handleNewsletterSubmit} className="mb-4">
+              <div className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  required
+                  disabled={newsletterStatus === 'loading'}
+                  className="px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={newsletterStatus === 'loading'}
+                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {newsletterStatus === 'loading' ? 'Subscribing...' : 'Subscribe'}
+                </button>
+              </div>
+              {newsletterMessage && (
+                <p className={`mt-2 text-xs ${newsletterStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {newsletterMessage}
+                </p>
+              )}
+            </form>
+            
+            <h3 className="text-lg font-bold mb-3 mt-6 text-orange-400">Follow Us</h3>
             <a
               href="https://chat.whatsapp.com/BA0roEDGMHPHCpuOm6EmyU"
               target="_blank"
